@@ -1,13 +1,16 @@
 #!/usr/bin/python
 
-import requests
-import json
-import ipaddress
-import socket
-
+try:
+    import requests
+    import socket
+    import psutil
+except ModuleNotFoundError as e:
+    print(f"Missing module: {e}")
+    exit()
+    
 API = "https://api.ipify.org?format=json"
 
-def local_ip():
+def local_ipv4():
     s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     s.settimeout(0)
 
@@ -23,14 +26,48 @@ def local_ip():
         
     return IP
 
-def global_ip():
+def local_ipv6():
+    s = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+    s.settimeout(0)
+    
+    try:
+        s.connect(("2001:4860:4860::8888", 80))
+        IP = s.getsockname()[0]
+        
+    except Exception:
+        IP = "::1"
+    
+    finally:
+        s.close()
+    
+    return IP if IP != "::1" else "Not found"
+
+def global_ipv4():
     req = requests.get(API)
     
     data = req.json()
     
     return data['ip']
 
+def global_ipv6():
+    IPv6_addrs = {}
+    
+    for interface, addrs in psutil.net_if_addrs().items():
+        for addr in addrs:
+            if addr.family == socket.AF_INET6:
+                ipv6_address = addr.address
+                
+                if not ipv6_address.startswith("fe80::"):
+                    ipv6_address = ipv6_address.split("%")[0]
+                    
+                    IPv6_addrs[interface] = ipv6_address
+    
+    return IPv6_addrs
 
 if __name__ == "__main__":
-    print(f"Your global ip: {global_ip()}")
-    print(f"Your local ip: {local_ip()}")
+    print(f"Global IPv4: {global_ipv4()}")
+    print(f"Local IPv4: {local_ipv4()}")
+    print(f"\nLocal IPv6: {local_ipv6()}")
+    print(f"Global IPv6: ")
+    for interface, ipv6 in global_ipv6().items():
+        print(f"    Interface: {interface}, IPv6: {ipv6}")
