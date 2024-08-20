@@ -65,8 +65,8 @@ def global_ipv6():
     return IPv6_addrs
 
 if __name__ == "__main__":
-    print(f"Global IPv4: {global_ipv4()}")
     print(f"Local IPv4: {local_ipv4()}")
+    print(f"Global IPv4: {global_ipv4()}")
     print(f"\nLocal IPv6: {local_ipv6()}")
     print(f"Global IPv6: ")
     for interface, ipv6 in global_ipv6().items():
